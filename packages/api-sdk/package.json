@@ -1,0 +1,16 @@
+{
+  "name": "@bookconsign/api-sdk",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "@trpc/client": "^10.45.2",
+    "@trpc/server": "^10.45.2",
+    "@bookconsign/schemas": "workspace:*",
+    "superjson": "^2.2.2"
+  }
+}

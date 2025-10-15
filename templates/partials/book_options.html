@@ -1,0 +1,6 @@
+<option value="">---------</option>
+{% for b in books %}
+  <option value="{{ b.id }}">{{ b.title }}</option>
+{% empty %}
+  <option value="" disabled>(No books for this author)</option>
+{% endfor %}

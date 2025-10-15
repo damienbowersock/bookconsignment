@@ -1,0 +1,53 @@
+<div id="sales-tables">
+  <h2 class="font-semibold mb-2">Recent Sales{% if selected_author %} ({{ selected_author.user.get_full_name|default:selected_author.user.username }}){% endif %}</h2>
+  <div class="bg-white rounded shadow overflow-hidden mb-6">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-100 text-left">
+        <tr>
+          <th class="px-3 py-2">Time</th>
+          <th class="px-3 py-2">Book</th>
+          <th class="px-3 py-2">Location</th>
+          <th class="px-3 py-2">Qty</th>
+          <th class="px-3 py-2">Unit Price</th>
+          <th class="px-3 py-2">Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in recent %}
+        <tr class="border-t">
+          <td class="px-3 py-2">{{ s.sold_at }}</td>
+          <td class="px-3 py-2">{{ s.book }}</td>
+          <td class="px-3 py-2">{{ s.location }}</td>
+          <td class="px-3 py-2">{{ s.qty }}</td>
+          <td class="px-3 py-2">${{ s.unit_price }}</td>
+          <td class="px-3 py-2">{{ s.source }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="px-3 py-3 text-gray-500">No sales yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="font-semibold mb-2">Stock Snapshot</h2>
+  <div class="bg-white rounded shadow overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-100 text-left">
+        <tr>
+          <th class="px-3 py-2">Title</th>
+          <th class="px-3 py-2">On Hand</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in stock %}
+        <tr class="border-t">
+          <td class="px-3 py-2">{{ r.title }}</td>
+          <td class="px-3 py-2">{{ r.on_hand }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="2" class="px-3 py-3 text-gray-500">No inventory yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

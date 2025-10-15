@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Payouts - Consignify{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">Log Payout</h1>
+<form method="post" class="bg-white rounded shadow p-4 space-y-3 mb-6">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button class="bg-blue-600 text-white rounded px-3 py-2">Save Payout</button>
+</form>
+
+<h2 class="font-semibold mb-2">Recent Payouts</h2>
+<div class="bg-white rounded shadow overflow-hidden">
+  <table class="min-w-full text-sm">
+    <thead class="bg-gray-100 text-left">
+      <tr>
+        <th class="px-3 py-2">Time</th>
+        <th class="px-3 py-2">Author</th>
+        <th class="px-3 py-2">Amount</th>
+        <th class="px-3 py-2">Method</th>
+        <th class="px-3 py-2">Reference</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in recent %}
+      <tr class="border-t">
+        <td class="px-3 py-2">{{ p.paid_at }}</td>
+        <td class="px-3 py-2">{{ p.author }}</td>
+        <td class="px-3 py-2">${{ p.amount }}</td>
+        <td class="px-3 py-2">{{ p.method|title }}</td>
+        <td class="px-3 py-2">{{ p.reference }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="px-3 py-3 text-gray-500">No payouts yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

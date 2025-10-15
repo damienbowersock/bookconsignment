@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "BookConsign Mobile",
+    "slug": "bookconsign-mobile",
+    "version": "1.0.0",
+    "sdkVersion": "51.0.0",
+    "platforms": ["ios", "android"],
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark"
+  }
+}

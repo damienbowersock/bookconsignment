@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "NodeNext",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@bookconsign/ui/*": [
+        "packages/ui/src/*"
+      ],
+      "@bookconsign/lib/*": [
+        "packages/lib/src/*"
+      ],
+      "@bookconsign/schemas/*": [
+        "packages/schemas/src/*"
+      ],
+      "@bookconsign/api/trpc": [
+        "apps/api/src/trpc/router.ts"
+      ],
+      "@bookconsign/api-sdk": [
+        "packages/api-sdk/src/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "packages",
+    "apps"
+  ]
+}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Add Book - Consignify{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-lg bg-white rounded-lg shadow p-6 mt-6">
+  <h1 class="text-xl font-semibold mb-4">Add a Book</h1>
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    <div>
+      <label class="block text-sm text-gray-700">Title</label>
+      {{ form.title }}
+      {{ form.title.errors }}
+    </div>
+    <div>
+      <label class="block text-sm text-gray-700">ISBN</label>
+      {{ form.isbn }}
+      {{ form.isbn.errors }}
+    </div>
+    <div>
+      <label class="block text-sm text-gray-700">Retail Price</label>
+      {{ form.retail_price }}
+      {{ form.retail_price.errors }}
+    </div>
+    <div class="flex gap-3">
+      <a href="{% url 'author_dashboard' %}" class="px-3 py-2 rounded border">Cancel</a>
+      <button class="bg-blue-600 text-white rounded px-3 py-2">Save Book</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

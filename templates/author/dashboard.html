@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Author Dashboard - Consignify{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">Author Dashboard</h1>
+
+{% if error %}
+  <div class="bg-red-50 text-red-800 border border-red-200 rounded p-3">{{ error }}</div>
+{% else %}
+
+<div class="flex justify-end mb-4">
+  <a href="{% url 'author_book_new' %}" class="bg-blue-600 text-white rounded px-3 py-2">+ Add Book</a>
+</div>
+
+<div class="grid sm:grid-cols-2 gap-4 mb-4">
+  <div class="card border border-muted/40 p-3 rounded-xl shadow bg-surface">
+    <div class="text-gray-500 text-sm">Total Revenue (your books)</div>
+    <div class="text-2xl font-semibold">${{ total_revenue|floatformat:2 }}</div>
+  </div>
+  <div class="card border border-muted/40 p-3 rounded-xl shadow bg-surface">
+    <div class="text-gray-500 text-sm">Author Due (before payouts)</div>
+    <div class="text-2xl font-semibold">${{ total_author_due|floatformat:2 }}</div>
+  </div>
+  <div class="card border border-muted/40 p-3 rounded-xl shadow bg-surface">
+    <div class="text-gray-500 text-sm">Paid to Date</div>
+    <div class="text-2xl font-semibold">${{ total_paid|floatformat:2 }}</div>
+  </div>
+  <div class="card border border-muted/40 p-3 rounded-xl shadow bg-surface">
+    <div class="text-gray-500 text-sm">Current Balance (to be paid)</div>
+    <div class="text-2xl font-semibold">${{ balance|floatformat:2 }}</div>
+  </div>
+</div>
+
+<div class="bg-white rounded shadow overflow-hidden mb-8">
+  <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+      <tr>
+        <th>Title</th>
+        <th>On Hand</th>
+        <th>Sold</th>
+        <th>Revenue</th>
+        <th>Your %</th>
+        <th>You Earned</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td>{{ r.title }}</td>
+        <td>{{ r.on_hand }}</td>
+        <td>{{ r.sold }}</td>
+        <td>${{ r.revenue|floatformat:2 }}</td>
+        <td>{{ r.author_share|floatformat:2 }}</td>
+        <td>${{ r.author_due|floatformat:2 }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="px-4 py-4 text-gray-500">No data yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2 class="text-lg font-semibold mb-2">Payment History</h2>
+<div class="bg-white rounded shadow overflow-hidden">
+  <table class="min-w-full text-sm">
+    <thead class="bg-gray-100 text-left">
+      <tr>
+        <th class="px-4 py-2">Date</th>
+        <th class="px-4 py-2">Amount</th>
+        <th class="px-4 py-2">Method</th>
+        <th class="px-4 py-2">Reference</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in payouts %}
+      <tr class="border-t">
+        <td class="px-4 py-2">{{ p.paid_at|date:"Y-m-d H:i" }}</td>
+        <td class="px-4 py-2">${{ p.amount|floatformat:2 }}</td>
+        <td class="px-4 py-2">{{ p.method|title }}</td>
+        <td class="px-4 py-2">{{ p.reference|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="px-4 py-4 text-gray-500">No payments recorded yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endif %}
+{% endblock %}

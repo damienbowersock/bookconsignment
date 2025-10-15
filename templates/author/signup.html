@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Author Sign Up - Consignify{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-lg bg-white rounded-lg shadow p-6 mt-6">
+  <h1 class="text-xl font-semibold mb-4">Author Sign Up</h1>
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm text-gray-700">Username</label>
+        {{ form.username }}
+        {{ form.username.errors }}
+      </div>
+      <div>
+        <label class="block text-sm text-gray-700">Email</label>
+        {{ form.email }}
+        {{ form.email.errors }}
+      </div>
+      <div>
+        <label class="block text-sm text-gray-700">First name</label>
+        {{ form.first_name }}
+        {{ form.first_name.errors }}
+      </div>
+      <div>
+        <label class="block text-sm text-gray-700">Last name</label>
+        {{ form.last_name }}
+        {{ form.last_name.errors }}
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-sm text-gray-700">Phone</label>
+        {{ form.phone }}
+        {{ form.phone.errors }}
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-sm text-gray-700">Organization</label>
+        {{ form.org }}
+        {{ form.org.errors }}
+      </div>
+      <div>
+        <label class="block text-sm text-gray-700">Password</label>
+        {{ form.password1 }}
+        {{ form.password1.errors }}
+      </div>
+      <div>
+        <label class="block text-sm text-gray-700">Confirm Password</label>
+        {{ form.password2 }}
+        {{ form.password2.errors }}
+      </div>
+    </div>
+    <button class="w-full bg-blue-600 text-white rounded px-3 py-2">Create account</button>
+  </form>
+</div>
+{% endblock %}

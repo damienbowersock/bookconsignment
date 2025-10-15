@@ -1,0 +1,42 @@
+{% load group_tags %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Consignify{% endblock %}</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body class="bg-gray-50">
+  <nav class="bg-white border-b border-gray-200">
+    <div class="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+      <a href="/" class="text-xl font-semibold">Consignify</a>
+      <div class="space-x-4">
+        {% if user.is_authenticated %}
+          {% if user|has_group:"Staff" %}
+            <a class="text-sm text-gray-700 hover:underline" href="{% url 'receiving' %}">Receiving</a>
+            <a class="text-sm text-gray-700 hover:underline" href="{% url 'sales' %}">Sales</a>
+            <a class="text-sm text-gray-700 hover:underline" href="{% url 'payouts' %}">Payouts</a>
+            <a class="text-sm text-gray-700 hover:underline" href="/admin/">Admin</a>
+          {% endif %}
+          {% if user|has_group:"Authors" %}
+            <a class="text-sm text-gray-700 hover:underline" href="{% url 'author_dashboard' %}">My Dashboard</a>
+          {% endif %}
+          <a class="text-sm text-gray-700 hover:underline" href="{% url 'logout' %}">Logout</a>
+        {% else %}
+          <a class="text-sm text-gray-700 hover:underline" href="{% url 'login' %}">Login</a>
+          <a class="text-sm text-blue-700 hover:underline" href="{% url 'author_signup' %}">Author Sign Up</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+  <main class="mx-auto max-w-6xl p-4">
+    {% for message in messages %}
+      <div class="mb-3 rounded bg-green-50 text-green-800 px-4 py-2">{{ message }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

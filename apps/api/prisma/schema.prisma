@@ -1,0 +1,527 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+}
+
+enum UserRole {
+  BOOKSELLER_ADMIN
+  STAFF
+  AUTHOR
+  PLATFORM_ADMIN
+}
+
+enum AuthorStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum AuthorLinkStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REVOKED
+}
+
+enum InventoryItemStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+  RETURNED
+  DAMAGED
+}
+
+enum ReturnStatus {
+  INITIATED
+  IN_TRANSIT
+  RECEIVED
+  CANCELLED
+}
+
+enum SettlementStatus {
+  DRAFT
+  APPROVED
+  LOCKED
+  ARCHIVED
+}
+
+enum PayoutMethod {
+  STRIPE_CONNECT
+  MANUAL
+}
+
+enum PayoutStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum NotificationType {
+  AUTHOR_ONBOARDING
+  AUTHOR_APPROVED
+  SETTLEMENT_READY
+  SETTLEMENT_APPROVED
+  PAYOUT_INITIATED
+  PAYOUT_COMPLETED
+  PAYOUT_FAILED
+  LOW_STOCK
+  IMPORT_COMPLETED
+}
+
+enum AdjustmentReason {
+  LOSS
+  DAMAGE
+  RETURN_ACCEPTED
+  INVENTORY_CORRECTION
+}
+
+enum AuditAction {
+  AUTHOR_LINK_APPROVED
+  TERMS_CHANGED
+  INVENTORY_ADJUSTED
+  SETTLEMENT_APPROVED
+  SETTLEMENT_LOCKED
+  PAYOUT_EXECUTED
+  RETURN_STATUS_CHANGED
+}
+
+model Tenant {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  plan        String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  users       UserTenant[]
+  locations   Location[]
+  authors     Author[]
+  titles      Title[]
+  terms       ConsignmentTerm[]
+  inventory   InventoryLot[]
+  returns     Return[]
+  settlements Settlement[]
+  payouts     Payout[]
+  sales       Sale[]
+  adjustments Adjustment[]
+  notifications Notification[]
+  auditEvents   AuditEvent[]
+
+  @@index([slug])
+}
+
+model User {
+  id             String        @id @default(cuid())
+  email          String        @unique
+  name           String?
+  authProviderId String        @unique
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  tenants        UserTenant[]
+  auditEvents    AuditEvent[]  @relation("AuditActor")
+}
+
+model UserTenant {
+  id        String   @id @default(cuid())
+  userId    String
+  tenantId  String
+  role      UserRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId])
+  @@index([tenantId, role])
+}
+
+model Author {
+  id               String        @id @default(cuid())
+  tenantId         String
+  name             String
+  email            String
+  phone            String?
+  taxStatus        String?
+  taxId            String?
+  stripeAccountId  String?
+  status           AuthorStatus  @default(PENDING)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  profile          Json?
+  notificationsOpt Json?
+
+  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  links       AuthorLink[]
+  titles      Title[]
+  inventory   InventoryLot[]
+  returns     Return[]
+  settlements Settlement[]
+  payouts     Payout[]
+
+  @@index([tenantId, status])
+  @@unique([tenantId, email])
+}
+
+model AuthorLink {
+  id         String           @id @default(cuid())
+  tenantId   String
+  authorId   String
+  approvedBy String?
+  status     AuthorLinkStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  metadata   Json?
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  approver User?  @relation(fields: [approvedBy], references: [id])
+
+  @@index([tenantId, status])
+  @@unique([tenantId, authorId])
+}
+
+model Title {
+  id          String   @id @default(cuid())
+  tenantId    String
+  authorId    String?
+  isbn10      String?  @db.VarChar(10)
+  isbn13      String?  @db.VarChar(13)
+  title       String
+  subtitle    String?
+  series      String?
+  format      String?
+  genre       String?
+  msrpCents   Int
+  coverUrl    String?
+  tags        String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  metadata    Json?
+
+  tenant        Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  author        Author?          @relation(fields: [authorId], references: [id])
+  lots          InventoryLot[]
+  saleLines     SaleLine[]
+  termAssignments TitleTerm[]
+  settlementLines SettlementLine[]
+
+  @@index([tenantId, title])
+  @@index([tenantId, authorId])
+}
+
+model ConsignmentTerm {
+  id             String   @id @default(cuid())
+  tenantId       String
+  name           String
+  type           String
+  percentSplit   Json?
+  fixedFeeCents  Int?
+  tierRulesJson  Json?
+  effectiveFrom  DateTime
+  effectiveTo    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  titleTerms TitleTerm[]
+  saleLines  SaleLine[]
+
+  @@index([tenantId, effectiveFrom])
+}
+
+model TitleTerm {
+  id            String   @id @default(cuid())
+  tenantId      String
+  titleId       String
+  termId        String
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title  Title           @relation(fields: [titleId], references: [id], onDelete: Cascade)
+  term   ConsignmentTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, titleId])
+  @@index([tenantId, termId])
+  @@unique([titleId, effectiveFrom])
+}
+
+model InventoryLot {
+  id           String   @id @default(cuid())
+  tenantId     String
+  titleId      String
+  authorId     String?
+  receivedQty  Int
+  onHandQty    Int
+  reservedQty  Int       @default(0)
+  soldQty      Int       @default(0)
+  returnedQty  Int       @default(0)
+  damagedQty   Int       @default(0)
+  receivedAt   DateTime
+  locationId   String?
+  note         String?
+  costBasisCents Int
+  retailPriceCents Int
+  intakeBatchId String?
+  metadata     Json?
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title     Title      @relation(fields: [titleId], references: [id], onDelete: Cascade)
+  author    Author?    @relation(fields: [authorId], references: [id])
+  location  Location?  @relation(fields: [locationId], references: [id])
+  items     InventoryItem[]
+  saleLines SaleLine[]
+  adjustments Adjustment[]
+  returnLines ReturnLine[]
+
+  @@index([tenantId, titleId])
+  @@index([tenantId, authorId])
+}
+
+model InventoryItem {
+  id        String               @id @default(cuid())
+  tenantId  String
+  lotId     String
+  barcode   String               @unique
+  status    InventoryItemStatus  @default(AVAILABLE)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lot    InventoryLot  @relation(fields: [lotId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+}
+
+model Sale {
+  id          String    @id @default(cuid())
+  tenantId    String
+  occurredAt  DateTime
+  source      String
+  externalId  String?
+  locationId  String?
+  subtotalCents Int
+  discountCents Int @default(0)
+  taxCents      Int @default(0)
+  totalCents    Int
+  createdAt   DateTime  @default(now())
+  payload     Json?
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  location Location? @relation(fields: [locationId], references: [id])
+  lines    SaleLine[]
+
+  @@index([tenantId, occurredAt])
+  @@unique([tenantId, source, externalId], map: "sale_external_id_unique")
+}
+
+model SaleLine {
+  id            String   @id @default(cuid())
+  saleId        String
+  tenantId      String
+  titleId       String
+  lotId         String?
+  qty           Int
+  unitPriceCents Int
+  appliedTermId String?
+  authorShareCents Int
+  storeShareCents  Int
+  createdAt     DateTime @default(now())
+
+  sale   Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title  Title   @relation(fields: [titleId], references: [id], onDelete: Cascade)
+  lot    InventoryLot? @relation(fields: [lotId], references: [id])
+  appliedTerm ConsignmentTerm? @relation(fields: [appliedTermId], references: [id])
+  settlementLines SettlementLine[]
+
+  @@index([tenantId, titleId])
+  @@index([saleId])
+}
+
+model Adjustment {
+  id         String           @id @default(cuid())
+  tenantId   String
+  titleId    String
+  lotId      String?
+  qtyDelta   Int
+  reason     AdjustmentReason
+  note       String?
+  createdAt  DateTime @default(now())
+  createdBy  String?
+
+  tenant  Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title   Title         @relation(fields: [titleId], references: [id], onDelete: Cascade)
+  lot     InventoryLot? @relation(fields: [lotId], references: [id])
+  creator User?         @relation(fields: [createdBy], references: [id])
+
+  @@index([tenantId, createdAt])
+}
+
+model Return {
+  id         String       @id @default(cuid())
+  tenantId   String
+  authorId   String
+  status     ReturnStatus @default(INITIATED)
+  initiatedAt DateTime    @default(now())
+  receivedAt DateTime?
+  createdBy  String?
+  note       String?
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  author   Author   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  creator  User?    @relation(fields: [createdBy], references: [id])
+  lines    ReturnLine[]
+
+  @@index([tenantId, status])
+}
+
+model ReturnLine {
+  id         String   @id @default(cuid())
+  returnId   String
+  titleId    String
+  lotId      String?
+  qty        Int
+  condition  String?
+  note       String?
+
+  return   Return       @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  title    Title        @relation(fields: [titleId], references: [id], onDelete: Cascade)
+  lot      InventoryLot? @relation(fields: [lotId], references: [id])
+
+  @@index([returnId])
+}
+
+model Settlement {
+  id             String           @id @default(cuid())
+  tenantId       String
+  authorId       String
+  periodStart    DateTime
+  periodEnd      DateTime
+  status         SettlementStatus @default(DRAFT)
+  approvedBy     String?
+  approvedAt     DateTime?
+  lockedAt       DateTime?
+  totalGrossCents    Int @default(0)
+  totalDiscountCents Int @default(0)
+  totalReturnCents   Int @default(0)
+  feeCents           Int @default(0)
+  authorShareCents   Int @default(0)
+  storeShareCents    Int @default(0)
+  pdfUrl         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  author     Author     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  approver   User?      @relation(fields: [approvedBy], references: [id])
+  lines      SettlementLine[]
+  payout     Payout?
+
+  @@index([tenantId, periodStart, periodEnd])
+  @@unique([tenantId, authorId, periodStart, periodEnd])
+}
+
+model SettlementLine {
+  id              String   @id @default(cuid())
+  settlementId    String
+  saleLineId      String?
+  titleId         String
+  qtySold         Int
+  grossCents      Int
+  discountCents   Int
+  returnCents     Int
+  feeCents        Int
+  authorShareCents Int
+  storeShareCents  Int
+
+  settlement Settlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+  saleLine   SaleLine?  @relation(fields: [saleLineId], references: [id])
+  title      Title      @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@index([settlementId])
+}
+
+model Payout {
+  id              String        @id @default(cuid())
+  tenantId        String
+  authorId        String
+  settlementId    String
+  method          PayoutMethod
+  stripeTransferId String?
+  amountCents     Int
+  currency        String        @default("USD")
+  status          PayoutStatus  @default(PENDING)
+  initiatedAt     DateTime      @default(now())
+  completedAt     DateTime?
+  failureReason   String?
+  metadata        Json?
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  author     Author     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  settlement Settlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+}
+
+model Location {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  address   Json?
+  timezone  String
+  createdAt DateTime @default(now())
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  inventory   InventoryLot[]
+  sales       Sale[]
+
+  @@index([tenantId, name])
+}
+
+model Notification {
+  id         String            @id @default(cuid())
+  tenantId   String
+  type       NotificationType
+  recipient  String
+  payload    Json
+  sentAt     DateTime?
+  status     NotificationStatus @default(QUEUED)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, type])
+}
+
+model AuditEvent {
+  id          String      @id @default(cuid())
+  tenantId    String
+  actorUserId String?
+  action      AuditAction
+  entity      String
+  entityId    String
+  diff        Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime    @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actor  User?  @relation("AuditActor", fields: [actorUserId], references: [id])
+
+  @@index([tenantId, entity])
+}

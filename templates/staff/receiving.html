@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Receiving - Consignify{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">Receive Inventory</h1>
+
+
+<!-- FILTER BAR -->
+<form id="filters" class="bg-white rounded shadow p-4 mb-4 flex items-center gap-3">
+  <label class="text-sm text-gray-700" for="author-select">Filter by Author:</label>
+  <select id="author-select" name="author"
+          class="border rounded px-2 py-1"
+          hx-get="{% url 'book_options' %}"
+          hx-trigger="change"
+          hx-target="#id_book"
+          hx-swap="innerHTML">
+    <option value="">All authors</option>
+    {% for a in authors %}
+      <option value="{{ a.id }}" {% if selected_author and a.id == selected_author.id %}selected{% endif %}>
+        {{ a.user.get_full_name|default:a.user.username }}
+      </option>
+    {% endfor %}
+  </select>
+</form>
+
+<form method="post"  action="{ % url 'receiving' %}" class="bg-white rounded shadow p-4 space-y-3 mb-6">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button class="bg-blue-600 text-white rounded px-3 py-2">Add Receipt</button>
+</form>
+ 
+<!-- TABLES (auto-load and auto-refresh on author change) -->
+<div id="receiving-tables"
+     hx-get="{% url 'receiving_tables_partial' %}"
+     hx-trigger="load, change from:#author-select"
+     hx-include="#filters"
+     hx-target="this"
+     hx-swap="outerHTML"
+     hx-push-url="true">
+  {# Server-render initial state so it works without JS #}
+  {% include "staff/partials/receiving_tables.html" %}
+</div>
+{% endblock %}
