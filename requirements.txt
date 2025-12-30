@@ -6,8 +6,13 @@ whitenoise>=6.7
 python-dateutil>=2.9
 Pillow>=10.0
 
-# Dev helpers (optional)
-ruff>=0.6
-black>=24.10
-pytest>=8.3
-pytest-django>=4.8
+# Production
+gunicorn>=21.0
+psycopg2-binary>=2.9
+dj-database-url>=2.1
+
+# Dev helpers (optional - not installed in production)
+# ruff>=0.6
+# black>=24.10
+# pytest>=8.3
+# pytest-django>=4.8

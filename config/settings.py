@@ -4,15 +4,20 @@ import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(
-    DEBUG=(bool, True),
-    SECRET_KEY=(str, "dev-insecure-secret-key"),
-    ALLOWED_HOSTS=(list, ["127.0.0.1","localhost"]),
+    DEBUG=(bool, False),
+    SECRET_KEY=(str, ""),
+    ALLOWED_HOSTS=(list, []),
 )
 env.read_env(os.path.join(BASE_DIR, ".env"))
 
 DEBUG = env("DEBUG")
 SECRET_KEY = env("SECRET_KEY")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
+
+# Fly.io sets FLY_APP_NAME
+if os.environ.get("FLY_APP_NAME"):
+    ALLOWED_HOSTS.append(f"{os.environ['FLY_APP_NAME']}.fly.dev")
+    CSRF_TRUSTED_ORIGINS = [f"https://{os.environ['FLY_APP_NAME']}.fly.dev"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -88,8 +93,15 @@ USE_TZ = True
 # Static files
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "static"]
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Media files (uploads)
 MEDIA_URL = "media/"
@@ -122,6 +134,13 @@ REST_FRAMEWORK = {
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%S%z",
     "DATE_FORMAT": "%Y-%m-%d",
 }
+
+# Security settings for production
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 # Consignment defaults
 DEFAULT_AUTHOR_SHARE = 0.65  # 65% to author, 35% to bookseller
